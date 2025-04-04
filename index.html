@@ -68,7 +68,7 @@ async function loadGallery() {
       const grid = document.getElementById("photoGrid");
       grid.innerHTML = "";
 
-      rows.forEach((row, i) => {
+      rows.slice(1).forEach((row, i) => {
         // Adjust based on your actual column order
         const title = row[2]?.v || "";
         const link = convertDriveLink(row[3]?.v || "");
