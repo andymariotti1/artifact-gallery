@@ -43,17 +43,20 @@
     return id ? `https://drive.google.com/uc?id=${id}` : "";
   }
 
-  async function loadGallery() {
-    try {
-      const res = await fetch(SHEET_URL);
-      const raw = await res.text();
-      const jsonString = raw
-        .replace(/.*google\.visualization\.Query\.setResponse\(/, "")
-        .replace(/\);?$/, "");
-      
-      const data = JSON.parse(jsonString);
-      const rows = data.table.rows;
-      console.log("Parsed rows:", rows);
+async function loadGallery() {
+  try {
+    const res = await fetch(SHEET_URL);
+    const raw = await res.text();
+
+    // Clean the wrapper around the JSON
+    const jsonString = raw
+      .replace(/^\/\*O_o\*\/\n/, '') // Remove comment line
+      .replace(/^google\.visualization\.Query\.setResponse\(/, "")
+      .replace(/\);$/, "");
+
+    const data = JSON.parse(jsonString);
+    const rows = data.table.rows;
+    console.log("Parsed rows:", rows);
 
       const grid = document.getElementById("photoGrid");
       grid.innerHTML = "";
