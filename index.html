@@ -27,59 +27,66 @@
   </div>
 
   <script>
-    const SHEET_ID = "1pFgXURagNKmwIQhDsKN_m_TSwg8X7-pghFH50tutsOo";
-    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+  const SHEET_ID = "1pFgXURagNKmwIQhDsKN_m_TSwg8X7-pghFH50tutsOo";
+  const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
-    function acceptTerms() {
-      document.getElementById("termsScreen").style.display = "none";
-      document.getElementById("gallery").style.display = "block";
-      loadGallery();
-    }
+  function acceptTerms() {
+    document.getElementById("termsScreen").style.display = "none";
+    document.getElementById("gallery").style.display = "block";
+    loadGallery();
+  }
 
-    function convertDriveLink(link) {
-      const match = link.match(/\/d\/([^\/]+)\//);
-      return match ? `https://drive.google.com/uc?id=${match[1]}` : "";
-    }
+  function convertDriveLink(link) {
+    const match = link.match(/\/d\/([^\/]+)\//);
+    const id = match ? match[1] : null;
+    if (!id) console.warn("Invalid link format:", link);
+    return id ? `https://drive.google.com/uc?id=${id}` : "";
+  }
 
-    function loadGallery() {
-      fetch(SHEET_URL)
-        .then(res => res.text())
-        .then(data => {
-          const json = JSON.parse(data.replace("/*O_o*/", "").replace("google.visualization.Query.setResponse(", "").slice(0, -2));
-          const rows = json.table.rows;
+  function loadGallery() {
+    fetch(SHEET_URL)
+      .then(res => res.text())
+      .then(data => {
+        const json = JSON.parse(data.replace("/*O_o*/", "").replace("google.visualization.Query.setResponse(", "").slice(0, -2));
+        const rows = json.table.rows;
+        console.log("Fetched rows:", rows); // ✅ Log rows
 
-          const grid = document.getElementById("photoGrid");
-          grid.innerHTML = "";
+        const grid = document.getElementById("photoGrid");
+        grid.innerHTML = "";
 
-          rows.forEach(row => {
-            const title = row[2]?.v || "";
-            const link = convertDriveLink(row[3]?.v || "");
-            const description = row[4]?.v || "";
-            const tags = row[7]?.v || "";
+        rows.forEach((row, index) => {
+          const title = row[2]?.v || "";
+          const linkRaw = row[3]?.v || "";
+          const link = convertDriveLink(linkRaw);
+          const description = row[4]?.v || "";
+          const tags = row[7]?.v || "";
 
-            if (!link) return;
+          console.log(`Row ${index}:`, { title, linkRaw, link, description, tags });
 
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-              <img src="${link}" alt="${title}" />
-              <h3>${title}</h3>
-              <p>${description}</p>
-              <small>${tags}</small>
-            `;
-            grid.appendChild(card);
-          });
+          if (!link) return;
+
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <img src="${link}" alt="${title}" />
+            <h3>${title}</h3>
+            <p>${description}</p>
+            <small>${tags}</small>
+          `;
+          grid.appendChild(card);
         });
-    }
-
-    document.getElementById("searchInput").addEventListener("input", function () {
-      const filter = this.value.toLowerCase();
-      document.querySelectorAll(".card").forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(filter) ? "" : "none";
       });
+  }
+
+  document.getElementById("searchInput").addEventListener("input", function () {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll(".card").forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.display = text.includes(filter) ? "" : "none";
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>
 
