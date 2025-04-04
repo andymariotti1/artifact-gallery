@@ -36,12 +36,19 @@
     loadGallery();
   }
 
-  function convertDriveLink(link) {
-    const match = link.match(/\/d\/([^\/]+)\//);
-    const id = match ? match[1] : null;
-    if (!id) console.warn("Invalid image link:", link);
-    return id ? `https://drive.google.com/uc?id=${id}` : "";
+ function convertDriveLink(link) {
+  if (!link) return "";
+
+  const fileMatch = link.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
+  const id = fileMatch?.[1];
+
+  if (!id) {
+    console.warn("Invalid image link format:", link);
+    return "";
   }
+
+  return `https://drive.google.com/uc?id=${id}`;
+}
 
 async function loadGallery() {
   try {
