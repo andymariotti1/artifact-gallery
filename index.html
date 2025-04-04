@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Artifact Gallery</title>
   <style>
     body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
@@ -17,80 +17,69 @@
 <body>
   <div id="termsScreen">
     <h2>Welcome to the Artifact Gallery</h2>
-    <p>By clicking below, you agree not to share this link or use these materials without permission.</p>
-    <button onclick="enterGallery()">I Agree, Enter</button>
+    <p>Please accept the terms and conditions to view the gallery.</p>
+    <button onclick="acceptTerms()">I Agree</button>
   </div>
 
   <div id="gallery">
-    <h2>Artifact Gallery</h2>
-    <input type="text" id="filterInput" class="filter" placeholder="Filter by tag..." oninput="filterCards()">
-    <div class="grid" id="cardContainer"></div>
+    <input class="filter" type="text" id="searchInput" placeholder="Filter by tags or title...">
+    <div class="grid" id="photoGrid"></div>
   </div>
 
   <script>
-    function enterGallery() {
-      document.getElementById('termsScreen').style.display = 'none';
-      document.getElementById('gallery').style.display = 'block';
+    const SHEET_ID = "1pFgXURagNKmwIQhDsKN_m_TSwg8X7-pghFH50tutsOo";
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+    function acceptTerms() {
+      document.getElementById("termsScreen").style.display = "none";
+      document.getElementById("gallery").style.display = "block";
+      loadGallery();
     }
 
-    async function init() {
-      const sheetId = '1pFgXURagNKmwIQhDsKN_m_TSwg8X7-pghFH50tutsOo';
-      const sheetName = 'catalog';
-      const url = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
-      try {
-        const response = await fetch(url);
-        const data = await response.json();
-        window.artifactData = data;
-        renderCards(data);
-      } catch (error) {
-        console.error('Failed to fetch spreadsheet data:', error);
-      }
+    function convertDriveLink(link) {
+      const match = link.match(/\/d\/([^\/]+)\//);
+      return match ? `https://drive.google.com/uc?id=${match[1]}` : "";
     }
 
-    function renderCards(data) {
-      const container = document.getElementById('cardContainer');
-      container.innerHTML = '';
-      data.forEach(row => {
-        if (!row['Link (Photo or Polycam)']) return;
+    function loadGallery() {
+      fetch(SHEET_URL)
+        .then(res => res.text())
+        .then(data => {
+          const json = JSON.parse(data.replace("/*O_o*/", "").replace("google.visualization.Query.setResponse(", "").slice(0, -2));
+          const rows = json.table.rows;
 
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.setAttribute('data-tags', row.Tags?.toLowerCase() || '');
+          const grid = document.getElementById("photoGrid");
+          grid.innerHTML = "";
 
-        const link = row['Link (Photo or Polycam)'];
-        if (link.endsWith('.jpg') || link.endsWith('.jpeg') || link.endsWith('.png')) {
-          const img = document.createElement('img');
-          img.src = link;
-          card.appendChild(img);
-        } else {
-          const a = document.createElement('a');
-          a.href = link;
-          a.textContent = 'View 3D Model';
-          a.target = '_blank';
-          card.appendChild(a);
-        }
+          rows.forEach(row => {
+            const title = row[2]?.v || "";
+            const link = convertDriveLink(row[3]?.v || "");
+            const description = row[4]?.v || "";
+            const tags = row[7]?.v || "";
 
-        const title = document.createElement('h4');
-        title.textContent = row['Title / Object Name'];
-        const desc = document.createElement('p');
-        desc.textContent = row.Description;
+            if (!link) return;
 
-        card.appendChild(title);
-        card.appendChild(desc);
-        container.appendChild(card);
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <img src="${link}" alt="${title}" />
+              <h3>${title}</h3>
+              <p>${description}</p>
+              <small>${tags}</small>
+            `;
+            grid.appendChild(card);
+          });
+        });
+    }
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const filter = this.value.toLowerCase();
+      document.querySelectorAll(".card").forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(filter) ? "" : "none";
       });
-    }
-
-    function filterCards() {
-      const filter = document.getElementById('filterInput').value.toLowerCase();
-      const cards = document.querySelectorAll('.card');
-      cards.forEach(card => {
-        const tags = card.getAttribute('data-tags') || '';
-        card.style.display = tags.includes(filter) ? '' : 'none';
-      });
-    }
-
-    window.addEventListener('DOMContentLoaded', init);
+    });
   </script>
 </body>
 </html>
+
