@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artifact Gallery</title>
+  <style>
+    body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    #termsScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 2rem; }
+    #gallery { display: none; padding: 1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .card { background: white; border: 1px solid #ccc; padding: 0.5rem; border-radius: 8px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); }
+    .card img { width: 100%; height: auto; border-radius: 4px; }
+    .filter { margin-bottom: 1rem; padding: 0.5rem; width: 100%; max-width: 400px; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <div id="termsScreen">
+    <h2>Welcome to the Artifact Gallery</h2>
+    <p>By clicking below, you agree not to share this link or use these materials without permission.</p>
+    <button onclick="enterGallery()">I Agree, Enter</button>
+  </div>
+
+  <div id="gallery">
+    <h2>Artifact Gallery</h2>
+    <input type="text" id="filterInput" class="filter" placeholder="Filter by tag..." oninput="filterCards()">
+    <div class="grid" id="cardContainer"></div>
+  </div>
+
+  <script>
+    function enterGallery() {
+      document.getElementById('termsScreen').style.display = 'none';
+      document.getElementById('gallery').style.display = 'block';
+    }
+
+    async function init() {
+      const sheetId = '1pFgXURagNKmwIQhDsKN_m_TSwg8X7-pghFH50tutsOo';
+      const sheetName = 'catalog';
+      const url = `https://opensheet.elk.sh/${sheetId}/${sheetName}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        window.artifactData = data;
+        renderCards(data);
+      } catch (error) {
+        console.error('Failed to fetch spreadsheet data:', error);
+      }
+    }
+
+    function renderCards(data) {
+      const container = document.getElementById('cardContainer');
+      container.innerHTML = '';
+      data.forEach(row => {
+        if (!row['Link (Photo or Polycam)']) return;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('data-tags', row.Tags?.toLowerCase() || '');
+
+        const link = row['Link (Photo or Polycam)'];
+        if (link.endsWith('.jpg') || link.endsWith('.jpeg') || link.endsWith('.png')) {
+          const img = document.createElement('img');
+          img.src = link;
+          card.appendChild(img);
+        } else {
+          const a = document.createElement('a');
+          a.href = link;
+          a.textContent = 'View 3D Model';
+          a.target = '_blank';
+          card.appendChild(a);
+        }
+
+        const title = document.createElement('h4');
+        title.textContent = row['Title / Object Name'];
+        const desc = document.createElement('p');
+        desc.textContent = row.Description;
+
+        card.appendChild(title);
+        card.appendChild(desc);
+        container.appendChild(card);
+      });
+    }
+
+    function filterCards() {
+      const filter = document.getElementById('filterInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        const tags = card.getAttribute('data-tags') || '';
+        card.style.display = tags.includes(filter) ? '' : 'none';
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
